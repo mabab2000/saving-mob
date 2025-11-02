@@ -3,11 +3,11 @@ import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/contexts/AuthContext';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { useColorScheme } from '@/contexts/ThemeContext';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function TabLayout() {

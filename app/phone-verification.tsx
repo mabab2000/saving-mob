@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from '@/contexts/ThemeContext';
 import { verifyPhoneNumber } from '@/services/api';
 
 export default function PhoneVerificationScreen() {
@@ -183,13 +183,13 @@ export default function PhoneVerificationScreen() {
               <ThemedView style={styles.buttonContent}>
                 {isLoading ? (
                   <>
-                    <ThemedText style={styles.submitButtonText}>Verifying...</ThemedText>
-                    <Ionicons name="sync" size={20} color="white" />
+                    <ThemedText style={[styles.submitButtonText, { color: colorScheme === 'light' ? 'black' : 'white' }]}>Verifying...</ThemedText>
+                    <Ionicons name="sync" size={20} color={colorScheme === 'light' ? 'black' : 'white'} />
                   </>
                 ) : (
                   <>
-                    <ThemedText style={styles.submitButtonText}>Verify Phone</ThemedText>
-                    <Ionicons name="arrow-forward" size={20} color="white" />
+                    <ThemedText style={[styles.submitButtonText, { color: colorScheme === 'light' ? 'black' : 'white' }]}>Verify Phone</ThemedText>
+                    <Ionicons name="arrow-forward" size={20} color={colorScheme === 'light' ? 'black' : 'white'} />
                   </>
                 )}
               </ThemedView>

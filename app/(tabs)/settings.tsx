@@ -1,21 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [biometric, setBiometric] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const { phoneNumber, userId, logout } = useAuth();
+  const { colorScheme, themePreference, setThemePreference } = useTheme();
+  const colors = Colors[colorScheme];
+  const { phoneNumber, userId, logoutCompletely } = useAuth();
+
+  // Copy user ID to clipboard
+  const copyUserIdToClipboard = async () => {
+    if (userId) {
+      try {
+        await Clipboard.setStringAsync(userId);
+        Alert.alert('Copied!', 'User ID has been copied to clipboard', [{ text: 'OK' }]);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to copy User ID to clipboard');
+      }
+    }
+  };
+
+  // Profile information press handler
+  const handleProfilePress = () => {
+    const buttons = [];
+    
+    if (userId) {
+      buttons.push({
+        text: 'Copy User ID',
+        onPress: copyUserIdToClipboard,
+      });
+    }
+    
+    buttons.push({
+      text: 'OK',
+      style: 'cancel' as const,
+    });
+
+    Alert.alert(
+      'Profile Information',
+      `Phone Number: ${phoneNumber}${userId ? `\nUser ID: ${userId}` : ''}\n\nTo change your phone number, please logout and register again.`,
+      buttons
+    );
+  };
 
   const settingsGroups = [
     {
@@ -24,11 +59,8 @@ export default function SettingsScreen() {
         {
           icon: 'person-outline',
           title: 'Profile Information',
-          subtitle: phoneNumber ? `Phone: ${phoneNumber}${userId ? `\nUser ID: ${userId.substring(0, 8)}...` : ''}` : 'Manage your personal details',
-          onPress: () => Alert.alert(
-            'Profile', 
-            `Phone Number: ${phoneNumber}${userId ? `\nUser ID: ${userId}` : ''}\n\nTo change your phone number, please logout and register again.`
-          ),
+          subtitle: phoneNumber ? `Phone: ${phoneNumber}${userId ? `\nUser ID: ${userId.substring(0, 8)}... (tap to copy)` : ''}` : 'Manage your personal details',
+          onPress: handleProfilePress,
           hasSwitch: false,
         },
       ],
@@ -58,19 +90,43 @@ export default function SettingsScreen() {
           hasSwitch: true,
         },
         {
-          icon: 'moon-outline',
-          title: 'Dark Mode',
-          subtitle: 'Toggle dark theme',
-          value: darkMode,
-          onValueChange: setDarkMode,
-          hasSwitch: true,
-        },
-        {
           icon: 'language-outline',
           title: 'Language',
           subtitle: 'English (US)',
           onPress: () => Alert.alert('Language', 'Language selection coming soon!'),
           hasSwitch: false,
+        },
+      ],
+    },
+    {
+      title: 'Theme',
+      items: [
+        {
+          icon: 'contrast-outline',
+          title: 'Follow System',
+          subtitle: 'Use device theme setting',
+          value: themePreference === 'system',
+          onValueChange: () => setThemePreference('system'),
+          hasSwitch: false,
+          isRadio: true,
+        },
+        {
+          icon: 'sunny-outline',
+          title: 'Light Mode',
+          subtitle: 'Always use light theme',
+          value: themePreference === 'light',
+          onValueChange: () => setThemePreference('light'),
+          hasSwitch: false,
+          isRadio: true,
+        },
+        {
+          icon: 'moon-outline',
+          title: 'Dark Mode',
+          subtitle: 'Always use dark theme',
+          value: themePreference === 'dark',
+          onValueChange: () => setThemePreference('dark'),
+          hasSwitch: false,
+          isRadio: true,
         },
       ],
     },
@@ -99,7 +155,7 @@ export default function SettingsScreen() {
           style: 'destructive', 
           onPress: async () => {
             try {
-              await logout();
+              await logoutCompletely();
               Alert.alert('Logged Out', 'You have been logged out successfully!');
             } catch (error) {
               Alert.alert('Error', 'Failed to logout. Please try again.');
@@ -133,7 +189,7 @@ export default function SettingsScreen() {
                     itemIndex !== group.items.length - 1 && styles.settingItemBorder,
                     { borderBottomColor: colors.icon + '15' }
                   ]}
-                  onPress={item.onPress}
+                  onPress={'onPress' in item ? item.onPress : ('isRadio' in item ? item.onValueChange : undefined)}
                   disabled={item.hasSwitch}
                 >
                   <ThemedView style={styles.settingItemLeft}>
@@ -153,6 +209,12 @@ export default function SettingsScreen() {
                       trackColor={{ false: colors.icon + '30', true: colors.primary + '50' }}
                       thumbColor={item.value ? colors.primary : '#f4f3f4'}
                     />
+                  ) : 'isRadio' in item ? (
+                    <ThemedView style={[styles.radioButton, { borderColor: colors.primary }]}>
+                      {item.value && (
+                        <ThemedView style={[styles.radioButtonInner, { backgroundColor: colors.primary }]} />
+                      )}
+                    </ThemedView>
                   ) : (
                     <Ionicons name="chevron-forward" size={16} color={colors.icon} />
                   )}
@@ -280,5 +342,18 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });
