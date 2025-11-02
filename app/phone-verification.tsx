@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { verifyPhoneNumber } from '@/services/api';
 
 export default function PhoneVerificationScreen() {
   const [phoneNumber, setPhoneNumber] = useState('+250 ');
@@ -35,14 +36,16 @@ export default function PhoneVerificationScreen() {
     setIsLoading(true);
 
     try {
-      // Store phone number locally using AuthContext
-      await setVerified(cleanPhone);
-      
-      // Simulate verification process (in real app, you'd send SMS verification)
-      setTimeout(() => {
+      // Call the verification endpoint with clean phone number
+      const data = await verifyPhoneNumber(cleanPhone);
+
+      if (data.exists) {
+        // Phone number exists and is registered
+        await setVerified(cleanPhone, data.user_id);
+        
         Alert.alert(
           'Success', 
-          'Phone number verified successfully!',
+          `Phone number ${data.message}`,
           [
             { 
               text: 'Continue', 
@@ -53,11 +56,24 @@ export default function PhoneVerificationScreen() {
             }
           ]
         );
-      }, 1500);
+      } else {
+        // Phone number not found
+        setIsLoading(false);
+        Alert.alert(
+          'Verification fail', 
+          'This phone number is not verfied. Please contact support +250783857284.',
+          [{ text: 'OK' }]
+        );
+      }
 
     } catch (error) {
       setIsLoading(false);
-      Alert.alert('Error', 'Failed to save phone number. Please try again.');
+      console.error('Phone verification error:', error);
+      Alert.alert(
+        'Connection Error', 
+        'Unable to verify phone number. Please check your internet connection and try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -120,7 +136,7 @@ export default function PhoneVerificationScreen() {
           </ThemedView>
           <ThemedText style={styles.headerTitle}>Welcome to SAVING</ThemedText>
           <ThemedText style={styles.headerSubtitle}>
-            Enter your phone number to get started. We'll use this to secure your account.
+            Enter your registered phone number to access your account. Only verified phone numbers can be used.
           </ThemedText>
         </ThemedView>
 
@@ -168,11 +184,11 @@ export default function PhoneVerificationScreen() {
                 {isLoading ? (
                   <>
                     <ThemedText style={styles.submitButtonText}>Verifying...</ThemedText>
-                    <Ionicons name="hourglass" size={20} color="white" />
+                    <Ionicons name="sync" size={20} color="white" />
                   </>
                 ) : (
                   <>
-                    <ThemedText style={styles.submitButtonText}>Continue</ThemedText>
+                    <ThemedText style={styles.submitButtonText}>Verify Phone</ThemedText>
                     <Ionicons name="arrow-forward" size={20} color="white" />
                   </>
                 )}
@@ -185,15 +201,15 @@ export default function PhoneVerificationScreen() {
         <ThemedView style={styles.securityNotice}>
           <Ionicons name="shield-checkmark" size={16} color={colors.success} />
           <ThemedText style={styles.securityText}>
-            Your phone number is stored securely on your device only
+            Your phone number is verified against our secure database
           </ThemedText>
         </ThemedView>
 
         {/* Privacy Notice */}
         <ThemedView style={styles.privacyNotice}>
           <ThemedText style={styles.privacyText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy. 
-            We'll never share your phone number with third parties.
+            Only registered phone numbers can access the app. 
+            Contact support if your number is not recognized.
           </ThemedText>
         </ThemedView>
       </ScrollView>

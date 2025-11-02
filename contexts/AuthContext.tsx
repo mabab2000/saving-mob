@@ -4,8 +4,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 interface AuthContextType {
   isVerified: boolean;
   phoneNumber: string | null;
+  userId: string | null;
   isLoading: boolean;
-  setVerified: (phoneNumber: string) => Promise<void>;
+  setVerified: (phoneNumber: string, userId?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isVerified, setIsVerified] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,14 +24,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const [verifiedStatus, storedPhoneNumber] = await Promise.all([
+      const [verifiedStatus, storedPhoneNumber, storedUserId] = await Promise.all([
         AsyncStorage.getItem('isUserVerified'),
-        AsyncStorage.getItem('userPhoneNumber')
+        AsyncStorage.getItem('userPhoneNumber'),
+        AsyncStorage.getItem('userId')
       ]);
 
       if (verifiedStatus === 'true' && storedPhoneNumber) {
         setIsVerified(true);
         setPhoneNumber(storedPhoneNumber);
+        setUserId(storedUserId);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
@@ -38,12 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setVerified = async (phone: string) => {
+  const setVerified = async (phone: string, userIdParam?: string) => {
     try {
       await AsyncStorage.setItem('isUserVerified', 'true');
       await AsyncStorage.setItem('userPhoneNumber', phone);
+      if (userIdParam) {
+        await AsyncStorage.setItem('userId', userIdParam);
+      }
       setIsVerified(true);
       setPhoneNumber(phone);
+      setUserId(userIdParam || null);
     } catch (error) {
       console.error('Error setting verification status:', error);
       throw error;
@@ -52,9 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove(['isUserVerified', 'userPhoneNumber']);
+      await AsyncStorage.multiRemove(['isUserVerified', 'userPhoneNumber', 'userId']);
       setIsVerified(false);
       setPhoneNumber(null);
+      setUserId(null);
     } catch (error) {
       console.error('Error during logout:', error);
       throw error;
@@ -66,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{ 
         isVerified, 
         phoneNumber, 
+        userId,
         isLoading, 
         setVerified, 
         logout 

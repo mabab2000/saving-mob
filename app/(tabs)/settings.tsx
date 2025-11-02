@@ -15,7 +15,7 @@ export default function SettingsScreen() {
   
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { phoneNumber, logout } = useAuth();
+  const { phoneNumber, userId, logout } = useAuth();
 
   const settingsGroups = [
     {
@@ -24,8 +24,11 @@ export default function SettingsScreen() {
         {
           icon: 'person-outline',
           title: 'Profile Information',
-          subtitle: phoneNumber ? `Phone: ${phoneNumber}` : 'Manage your personal details',
-          onPress: () => Alert.alert('Profile', `Phone Number: ${phoneNumber}\n\nTo change your phone number, please logout and register again.`),
+          subtitle: phoneNumber ? `Phone: ${phoneNumber}${userId ? `\nUser ID: ${userId.substring(0, 8)}...` : ''}` : 'Manage your personal details',
+          onPress: () => Alert.alert(
+            'Profile', 
+            `Phone Number: ${phoneNumber}${userId ? `\nUser ID: ${userId}` : ''}\n\nTo change your phone number, please logout and register again.`
+          ),
           hasSwitch: false,
         },
       ],
