@@ -1,98 +1,212 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <ThemedView style={styles.header}>
+        <ThemedText style={styles.headerTitle}>SAVING</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
+
+      {/* Main Content */}
+      <ThemedView style={styles.content}>
+        {/* Profile Image Section */}
+        <ThemedView style={styles.profileSection}>
+          <View style={styles.imageContainer}>
+            <Image
+              source={require('@/assets/images/image.jpg')}
+              style={styles.profileImage}
+              contentFit="cover"
+            />
+          </View>
+          
+          {/* Money Display */}
+          <ThemedView style={styles.moneySection}>
+            <ThemedText style={styles.currencyText}>Total Balance</ThemedText>
+            <ThemedText style={[styles.moneyAmount, { color: colors.primary }]}>
+              5,000 RWF
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
+
+        {/* Quick Actions */}
+        <ThemedView style={styles.quickActions}>
+          <ThemedText style={styles.sectionTitle}>Quick Actions</ThemedText>
+          
+          <ThemedView style={styles.actionGrid}>
+            <ThemedView style={[styles.actionCard, { borderColor: colors.icon + '20' }]}>
+              <LinearGradient
+                colors={[colors.savings + '20', colors.savings + '10']}
+                style={styles.actionGradient}
+              >
+                <Ionicons name="analytics" size={32} color={colors.savings} />
+                <ThemedText style={styles.actionText}>History</ThemedText>
+              </LinearGradient>
+            </ThemedView>
+
+            <ThemedView style={[styles.actionCard, { borderColor: colors.icon + '20' }]}>
+              <LinearGradient
+                colors={[colors.warning + '20', colors.warning + '10']}
+                style={styles.actionGradient}
+              >
+                <Ionicons name="card" size={32} color={colors.warning} />
+                <ThemedText style={styles.actionText}>Loans</ThemedText>
+                <ThemedText style={[styles.loanAmount, { color: colors.warning }]}>
+                  400 RWF
+                </ThemedText>
+              </LinearGradient>
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
+
+        {/* Recent Transactions */}
+        <ThemedView style={styles.transactionsSection}>
+          <ThemedText style={styles.sectionTitle}>Recent Transactions</ThemedText>
+          
+          <ThemedView style={[styles.transactionCard, { borderColor: colors.icon + '15' }]}>
+            <ThemedView style={styles.transactionIcon}>
+              <Ionicons name="add-circle" size={24} color={colors.income} />
+            </ThemedView>
+            <ThemedView style={styles.transactionDetails}>
+              <ThemedText style={styles.transactionTitle}>Deposit</ThemedText>
+              <ThemedText style={styles.transactionDate}>Today, 2:30 PM</ThemedText>
+            </ThemedView>
+            <ThemedText style={[styles.transactionAmount, { color: colors.income }]}>
+              +1,500 RWF
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  header: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  imageContainer: {
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75, // 50% border radius
+  },
+  moneySection: {
+    alignItems: 'center',
+  },
+  currencyText: {
+    fontSize: 16,
+    opacity: 0.7,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  moneyAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  quickActions: {
+    marginBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  actionCard: {
+    width: (screenWidth - 52) / 2, // Account for padding and gap
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  actionGradient: {
+    padding: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  loanAmount: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  transactionsSection: {
+    marginBottom: 40,
+  },
+  transactionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  transactionDate: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

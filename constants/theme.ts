@@ -5,8 +5,8 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#2E7D32'; // Green for financial/savings theme
+const tintColorDark = '#4CAF50';
 
 export const Colors = {
   light: {
@@ -16,6 +16,14 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    primary: '#2E7D32',
+    secondary: '#4CAF50',
+    success: '#4CAF50',
+    warning: '#FF9800',
+    error: '#F44336',
+    income: '#4CAF50',
+    expense: '#F44336',
+    savings: '#2196F3',
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +32,14 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    primary: '#4CAF50',
+    secondary: '#66BB6A',
+    success: '#4CAF50',
+    warning: '#FFB74D',
+    error: '#EF5350',
+    income: '#66BB6A',
+    expense: '#EF5350',
+    savings: '#42A5F5',
   },
 };
 
