@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
@@ -43,13 +42,10 @@ export default function LoginScreen() {
 
         {/* Login Form */}
         <ThemedView style={styles.formContainer}>
-          <LinearGradient
-            colors={colorScheme === 'dark' ? ['#2D4A2D', '#1A2B1A'] : ['#F8FFF8', '#E8F5E8']}
-            style={styles.formGradient}
-          >
+          <ThemedView style={[styles.formCard, { borderColor: colors.icon + '20' }]}>
             <ThemedView style={styles.inputSection}>
               <ThemedText style={styles.inputLabel}>User ID</ThemedText>
-              <ThemedView style={[styles.inputContainer, { borderColor: colors.icon + '30' }]}>
+              <ThemedView style={[styles.inputContainer, { borderColor: colors.icon + '30', backgroundColor: colors.background }]}>
                 <Ionicons 
                   name="person-outline" 
                   size={20} 
@@ -73,13 +69,10 @@ export default function LoginScreen() {
               style={[styles.submitButton, { backgroundColor: colors.primary }]}
               onPress={handleSubmit}
             >
-              <LinearGradient
-                colors={[colors.primary, colors.secondary]}
-                style={styles.buttonGradient}
-              >
+              <ThemedView style={styles.buttonContent}>
                 <ThemedText style={styles.submitButtonText}>Sign In</ThemedText>
                 <Ionicons name="arrow-forward" size={20} color="white" />
-              </LinearGradient>
+              </ThemedView>
             </Pressable>
 
             {/* Additional Options */}
@@ -89,14 +82,14 @@ export default function LoginScreen() {
                 <ThemedText style={styles.optionText}>Use Biometric</ThemedText>
               </Pressable>
               
-              <ThemedView style={styles.divider} />
+              <ThemedView style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
               
               <Pressable style={styles.optionButton}>
                 <Ionicons name="help-circle-outline" size={24} color={colors.primary} />
                 <ThemedText style={styles.optionText}>Forgot User ID?</ThemedText>
               </Pressable>
             </ThemedView>
-          </LinearGradient>
+          </ThemedView>
         </ThemedView>
 
         {/* Security Notice */}
@@ -142,8 +135,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 40,
   },
-  formGradient: {
+  formCard: {
     borderRadius: 20,
+    borderWidth: 1,
     padding: 30,
   },
   inputSection: {
@@ -161,7 +155,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   inputIcon: {
     marginRight: 12,
@@ -176,7 +169,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 30,
   },
-  buttonGradient: {
+  buttonContent: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -204,7 +197,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
     marginHorizontal: 40,
   },
   securityNotice: {

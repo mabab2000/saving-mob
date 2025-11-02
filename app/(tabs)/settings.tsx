@@ -6,34 +6,33 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [biometric, setBiometric] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [autoBackup, setAutoBackup] = useState(true);
   
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { phoneNumber, logout } = useAuth();
 
   const settingsGroups = [
     {
-      title: 'Account',
+      title: 'Profile',
       items: [
         {
           icon: 'person-outline',
           title: 'Profile Information',
-          subtitle: 'Manage your personal details',
-          onPress: () => Alert.alert('Profile', 'Profile settings coming soon!'),
+          subtitle: phoneNumber ? `Phone: ${phoneNumber}` : 'Manage your personal details',
+          onPress: () => Alert.alert('Profile', `Phone Number: ${phoneNumber}\n\nTo change your phone number, please logout and register again.`),
           hasSwitch: false,
         },
-        {
-          icon: 'lock-closed-outline',
-          title: 'Change Password',
-          subtitle: 'Update your account password',
-          onPress: () => Alert.alert('Security', 'Password change coming soon!'),
-          hasSwitch: false,
-        },
+      ],
+    },
+    {
+      title: 'Security',
+      items: [
         {
           icon: 'finger-print',
           title: 'Biometric Login',
@@ -73,54 +72,13 @@ export default function SettingsScreen() {
       ],
     },
     {
-      title: 'Data & Privacy',
-      items: [
-        {
-          icon: 'cloud-upload-outline',
-          title: 'Auto Backup',
-          subtitle: 'Automatically backup your data',
-          value: autoBackup,
-          onValueChange: setAutoBackup,
-          hasSwitch: true,
-        },
-        {
-          icon: 'download-outline',
-          title: 'Export Data',
-          subtitle: 'Download your financial data',
-          onPress: () => Alert.alert('Export', 'Data export coming soon!'),
-          hasSwitch: false,
-        },
-        {
-          icon: 'shield-outline',
-          title: 'Privacy Policy',
-          subtitle: 'Read our privacy policy',
-          onPress: () => Alert.alert('Privacy', 'Privacy policy coming soon!'),
-          hasSwitch: false,
-        },
-      ],
-    },
-    {
       title: 'Support',
       items: [
-        {
-          icon: 'help-circle-outline',
-          title: 'Help Center',
-          subtitle: 'Get help and support',
-          onPress: () => Alert.alert('Help', 'Help center coming soon!'),
-          hasSwitch: false,
-        },
         {
           icon: 'chatbubble-outline',
           title: 'Contact Us',
           subtitle: 'Send us your feedback',
           onPress: () => Alert.alert('Contact', 'Contact form coming soon!'),
-          hasSwitch: false,
-        },
-        {
-          icon: 'star-outline',
-          title: 'Rate App',
-          subtitle: 'Rate us on the app store',
-          onPress: () => Alert.alert('Rate', 'Thank you for your feedback!'),
           hasSwitch: false,
         },
       ],
@@ -130,10 +88,21 @@ export default function SettingsScreen() {
   const handleLogout = () => {
     Alert.alert(
       'Logout',
-      'Are you sure you want to logout?',
+      'Are you sure you want to logout? You will need to verify your phone number again when you return.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logged Out', 'You have been logged out successfully!') },
+        { 
+          text: 'Logout', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await logout();
+              Alert.alert('Logged Out', 'You have been logged out successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          }
+        },
       ]
     );
   };
@@ -253,7 +222,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   settingItemBorder: {
     borderBottomWidth: 1,

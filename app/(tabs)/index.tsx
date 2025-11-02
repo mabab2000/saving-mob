@@ -1,24 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/contexts/AuthContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { phoneNumber } = useAuth();
+
+  // Format phone number for display
+  const formatPhoneForDisplay = (phone: string | null) => {
+    if (!phone) return '';
+    // For Rwanda numbers (+250123456789), show +250****6789
+    if (phone.startsWith('+250') && phone.length >= 13) {
+      return `+250****${phone.slice(-3)}`;
+    }
+    return phone.length > 10 ? `${phone.slice(0, 4)}****${phone.slice(-3)}` : phone;
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <ThemedView style={styles.header}>
         <ThemedText style={styles.headerTitle}>SAVING</ThemedText>
+        {phoneNumber && (
+          <ThemedText style={styles.welcomeText}>
+            Welcome, {formatPhoneForDisplay(phoneNumber)}
+          </ThemedText>
+        )}
       </ThemedView>
 
       {/* Main Content */}
@@ -48,26 +64,20 @@ export default function HomeScreen() {
           
           <ThemedView style={styles.actionGrid}>
             <ThemedView style={[styles.actionCard, { borderColor: colors.icon + '20' }]}>
-              <LinearGradient
-                colors={[colors.savings + '20', colors.savings + '10']}
-                style={styles.actionGradient}
-              >
+              <ThemedView style={styles.actionContent}>
                 <Ionicons name="analytics" size={32} color={colors.savings} />
                 <ThemedText style={styles.actionText}>History</ThemedText>
-              </LinearGradient>
+              </ThemedView>
             </ThemedView>
 
             <ThemedView style={[styles.actionCard, { borderColor: colors.icon + '20' }]}>
-              <LinearGradient
-                colors={[colors.warning + '20', colors.warning + '10']}
-                style={styles.actionGradient}
-              >
+              <ThemedView style={styles.actionContent}>
                 <Ionicons name="card" size={32} color={colors.warning} />
                 <ThemedText style={styles.actionText}>Loans</ThemedText>
                 <ThemedText style={[styles.loanAmount, { color: colors.warning }]}>
                   400 RWF
                 </ThemedText>
-              </LinearGradient>
+              </ThemedView>
             </ThemedView>
           </ThemedView>
         </ThemedView>
@@ -77,7 +87,7 @@ export default function HomeScreen() {
           <ThemedText style={styles.sectionTitle}>Recent Transactions</ThemedText>
           
           <ThemedView style={[styles.transactionCard, { borderColor: colors.icon + '15' }]}>
-            <ThemedView style={styles.transactionIcon}>
+            <ThemedView style={[styles.transactionIcon, { backgroundColor: colors.icon + '15' }]}>
               <Ionicons name="add-circle" size={24} color={colors.income} />
             </ThemedView>
             <ThemedView style={styles.transactionDetails}>
@@ -108,6 +118,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  welcomeText: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    marginTop: 4,
   },
   content: {
     flex: 1,
@@ -157,7 +173,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
-  actionGradient: {
+  actionContent: {
     padding: 20,
     alignItems: 'center',
     gap: 12,
@@ -188,7 +204,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
