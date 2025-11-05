@@ -19,6 +19,11 @@ function RootLayoutInner() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="phone-verification" options={{ headerShown: false }} />
+        <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+        <Stack.Screen name="savings-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="loan-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="penalties-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-detail" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>

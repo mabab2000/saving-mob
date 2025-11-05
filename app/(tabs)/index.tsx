@@ -45,8 +45,8 @@ export default function HomeScreen() {
         
         // Check if the image_preview_link is already a full URL
         if (data.image_preview_link.startsWith('http')) {
-          // It's already a full URL, but check for typos and fix them
-          fullImageUrl = data.image_preview_link.replace('aving-api.mababa.app', 'saving-api.mababa.app');
+          // Use the image URL as provided by the API
+          fullImageUrl = data.image_preview_link;
         } else {
           // It's a relative path, construct the full URL
           const cleanPath = data.image_preview_link.replace(/\\/g, '/');
@@ -257,7 +257,7 @@ export default function HomeScreen() {
               source={
                 profileImageUri 
                   ? { uri: profileImageUri }
-                  : require('@/assets/images/image.jpg')
+                  : require('@/assets/images/logo.jpg')
               }
               style={styles.profileImage}
               contentFit="cover"

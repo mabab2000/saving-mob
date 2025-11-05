@@ -121,7 +121,7 @@ export default function LoginScreen() {
           `Welcome back, ${response.user_info.username}!`,
           [{ 
             text: 'Continue', 
-            onPress: () => router.replace('/dashboard')
+            onPress: () => router.push('/dashboard')
           }]
         );
       } else {
@@ -181,7 +181,7 @@ export default function LoginScreen() {
             text: 'Continue', 
             onPress: () => {
               // Navigate to dashboard
-              router.replace('/dashboard');
+              router.push('/dashboard');
             }
           }
         ]

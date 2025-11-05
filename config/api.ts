@@ -1,14 +1,14 @@
 // API Configuration for different environments
 const CONFIG = {
   development: {
-    API_BASE_URL: 'https://saving-api.mababa.app/api', // Your deployed API
+    API_BASE_URL: 'https://saving-api.mababa.app/api', 
     SERVER_BASE_URL: 'https://saving-api.mababa.app', // Server base URL for static files
     API_TIMEOUT: 10000, // 10 seconds
   },
   production: {
     API_BASE_URL: 'https://saving-api.mababa.app/api',
     SERVER_BASE_URL: 'https://saving-api.mababa.app',
-    API_TIMEOUT: 15000, // 15 seconds
+    API_TIMEOUT: 15000,
   },
 };
 
