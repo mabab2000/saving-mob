@@ -57,7 +57,7 @@ export class CacheService {
       // Check if cache is expired
       if (now - cacheItem.timestamp > CACHE_EXPIRY) {
         console.log(`Cache expired for key: ${finalKey}`);
-        await AsyncStorage.removeItem(finalKey);
+        // Don't delete expired cache - keep it for offline fallback
         return null;
       }
 
