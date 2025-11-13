@@ -2,15 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/contexts/ThemeContext';
-import { getHomeData, uploadProfilePhoto } from '@/services/api';
+import { uploadProfilePhoto, getProfilePhoto } from '@/services/api';
 import { SERVER_BASE_URL } from '@/config/api';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -24,47 +24,117 @@ export default function HomeScreen() {
   const [homeData, setHomeData] = useState<any>(null);
   const [isLoadingHomeData, setIsLoadingHomeData] = useState(true);
 
-  // Fetch home data when component loads or userId changes
+  // WebSocket connection for live home data
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (userId) {
-      fetchHomeData();
-    }
+    if (!userId) return;
+
+    let closedByUser = false;
+
+    const connect = () => {
+      // Convert SERVER_BASE_URL (http(s)) to ws(s)
+      const base = SERVER_BASE_URL.replace(/^http/, 'ws');
+      const wsUrl = `${base}/api/home/${userId}`;
+
+      console.log('Connecting to Home WebSocket:', wsUrl);
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('Home WebSocket connected');
+        setIsLoadingHomeData(false);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+              const data = JSON.parse(event.data);
+              console.log('Home WebSocket message received:', data);
+              setHomeData(data);
+        } catch (err) {
+          console.error('Failed to parse WebSocket message for home data:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('Home WebSocket error:', err);
+      };
+
+      ws.onclose = (ev) => {
+        wsRef.current = null;
+        console.log('Home WebSocket closed', ev.code, ev.reason);
+        if (!closedByUser) {
+          // Attempt reconnection with backoff
+          const timeout = 2000; // 2s backoff — could be exponential
+          reconnectTimerRef.current = setTimeout(() => connect(), timeout) as unknown as number;
+          console.log(`Reconnecting Home WebSocket in ${timeout}ms...`);
+        }
+      };
+    };
+
+    // Start connection
+    setIsLoadingHomeData(true);
+    connect();
+
+    return () => {
+      closedByUser = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current as any);
+      }
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch (e) {
+          /* ignore */
+        }
+        wsRef.current = null;
+      }
+    };
   }, [userId]);
 
-  const fetchHomeData = async () => {
+  // Fetch profile image from REST endpoint (use when websocket doesn't provide image)
+  useEffect(() => {
     if (!userId) return;
-    
-    try {
-      setIsLoadingHomeData(true);
-      const data = await getHomeData(userId, accessToken || undefined);
-      setHomeData(data);
-      
-      // Set profile image if available
-      if (data.image_preview_link) {
-        let fullImageUrl;
-        
-        // Check if the image_preview_link is already a full URL
-        if (data.image_preview_link.startsWith('http')) {
-          // Use the image URL as provided by the API
-          fullImageUrl = data.image_preview_link;
+
+    const fetchPhoto = async () => {
+      try {
+        const result = await getProfilePhoto(userId, accessToken || undefined);
+        console.log('getProfilePhoto result:', result);
+
+        // Try common fields where the API might store the photo URL/path
+        let photoValue: any = null;
+        if (!result) photoValue = null;
+        else if (typeof result === 'string') photoValue = result;
+        else if (result.photo) photoValue = result.photo;
+  // Check known response shapes
+  else if ((result as any).image_preview_link) photoValue = (result as any).image_preview_link;
+  else if ((result as any).image) photoValue = (result as any).image;
+  else if ((result as any).url) photoValue = (result as any).url;
+  else if ((result as any).photo_url) photoValue = (result as any).photo_url;
+  else if ((result as any).data && (result as any).data.photo) photoValue = (result as any).data.photo;
+  else if (Array.isArray(result) && result.length > 0 && result[0].photo) photoValue = result[0].photo;
+
+        if (photoValue && typeof photoValue === 'string') {
+          let fullImageUrl = photoValue;
+          // If it's a relative path, prefix with server base
+          if (!fullImageUrl.startsWith('http')) {
+            const cleanPath = fullImageUrl.replace(/\\/g, '/').replace(/^\//, '');
+            fullImageUrl = `${SERVER_BASE_URL}/${cleanPath}`;
+          }
+          console.log('Resolved profile image URL:', fullImageUrl);
+          setProfileImageUri(fullImageUrl);
         } else {
-          // It's a relative path, construct the full URL
-          const cleanPath = data.image_preview_link.replace(/\\/g, '/');
-          fullImageUrl = `${SERVER_BASE_URL}/${cleanPath}`;
+          console.log('No profile photo value found in getProfilePhoto response');
+          setProfileImageUri(null);
         }
-        
-        console.log('Setting profile image URL:', fullImageUrl);
-        setProfileImageUri(fullImageUrl);
-      } else {
-        console.log('No image_preview_link in API response');
-        setProfileImageUri(null);
+      } catch (error) {
+        console.error('Error fetching profile photo from REST endpoint:', error);
       }
-    } catch (error) {
-      console.error('Error fetching home data:', error);
-    } finally {
-      setIsLoadingHomeData(false);
-    }
-  };
+    };
+
+    fetchPhoto();
+  }, [userId]);
 
   // Format phone number for display
   const formatPhoneForDisplay = (phone: string | null) => {
@@ -226,8 +296,15 @@ export default function HomeScreen() {
         { text: 'OK' }
       ]);
 
-      // Immediately refresh home data to get updated profile image
-      await fetchHomeData();
+      // Immediately update profile image from upload response if available
+      if (result && result.photo) {
+        let fullImageUrl = result.photo;
+        if (!fullImageUrl.startsWith('http')) {
+          const cleanPath = fullImageUrl.replace(/\\/g, '/');
+          fullImageUrl = `${SERVER_BASE_URL}/${cleanPath}`;
+        }
+        setProfileImageUri(fullImageUrl);
+      }
       
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -286,9 +363,15 @@ export default function HomeScreen() {
               <ThemedView style={styles.actionContent}>
                 <Ionicons name="trending-up" size={40} color={colors.primary} />
                 <ThemedText style={[styles.actionText, styles.cardTitle]}>Total Saving</ThemedText>
-                <ThemedText style={[styles.cardAmount, { color: colors.primary }]}>
-                  {isLoadingHomeData ? 'Loading...' : homeData ? `${homeData.total_saving?.toLocaleString()} RWF` : '0 RWF'}
-                </ThemedText>
+                <ThemedView style={{ minHeight: 28, justifyContent: 'center', alignItems: 'center' }}>
+                  {isLoadingHomeData ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <ThemedText style={[styles.cardAmount, { color: colors.primary }]}>
+                      {homeData ? `${homeData.total_saving?.toLocaleString()} RWF` : '0 RWF'}
+                    </ThemedText>
+                  )}
+                </ThemedView>
               </ThemedView>
             </ThemedView>
 
@@ -296,9 +379,15 @@ export default function HomeScreen() {
               <ThemedView style={styles.actionContent}>
                 <Ionicons name="card" size={40} color={colors.warning} />
                 <ThemedText style={[styles.actionText, styles.cardTitle]}>Current Loan</ThemedText>
-                <ThemedText style={[styles.cardAmount, { color: colors.warning }]}>
-                  {isLoadingHomeData ? 'Loading...' : homeData ? `${homeData.total_loan?.toLocaleString()} RWF` : '0 RWF'}
-                </ThemedText>
+                <ThemedView style={{ minHeight: 28, justifyContent: 'center', alignItems: 'center' }}>
+                  {isLoadingHomeData ? (
+                    <ActivityIndicator size="small" color={colors.warning} />
+                  ) : (
+                    <ThemedText style={[styles.cardAmount, { color: colors.warning }]}>
+                      {homeData ? `${homeData.total_loan?.toLocaleString()} RWF` : '0 RWF'}
+                    </ThemedText>
+                  )}
+                </ThemedView>
               </ThemedView>
             </ThemedView>
           </ThemedView>
@@ -309,17 +398,8 @@ export default function HomeScreen() {
           <ThemedText style={styles.sectionTitle}>Latest saving Transactions</ThemedText>
           
           {isLoadingHomeData ? (
-            <ThemedView style={[styles.transactionCard, { borderColor: colors.icon + '15' }]}>
-              <ThemedView style={[styles.transactionIcon, { backgroundColor: colors.icon + '15' }]}>
-                <Ionicons name="time" size={24} color={colors.icon} />
-              </ThemedView>
-              <ThemedView style={styles.transactionDetails}>
-                <ThemedText style={styles.transactionTitle}>Loading...</ThemedText>
-                <ThemedText style={styles.transactionDate}>Please wait</ThemedText>
-              </ThemedView>
-              <ThemedText style={[styles.transactionAmount, { color: colors.icon }]}>
-                ...
-              </ThemedText>
+            <ThemedView style={[styles.transactionCard, { borderColor: colors.icon + '15', justifyContent: 'center', alignItems: 'center', paddingVertical: 24 }]}>
+              <ActivityIndicator size="large" color={colors.icon} />
             </ThemedView>
           ) : homeData?.latest_saving_info ? (
             <ThemedView style={[styles.transactionCard, { borderColor: colors.icon + '15' }]}>

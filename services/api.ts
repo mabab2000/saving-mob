@@ -798,3 +798,49 @@ export const getPenaltiesData = async (userId: string, accessToken?: string): Pr
   console.error('All penalties data fetch attempts failed:', lastError);
   throw lastError;
 };
+
+export const getProfilePhoto = async (userId: string, accessToken?: string): Promise<UploadProfilePhotoResponse> => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= NETWORK_CONFIG.retryAttempts; attempt++) {
+    try {
+      console.log(`Attempting to fetch profile photo (attempt ${attempt}/${NETWORK_CONFIG.retryAttempts}):`, {
+        url: `${API_BASE_URL}/profile-photo/${userId}`,
+        userId
+      });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+      const response = await fetch(`${API_BASE_URL}/profile-photo/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Profile photo fetch failed:', response.status, errorText);
+        throw new Error(`Profile photo fetch failed: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Profile photo fetched successfully:', data);
+      return data;
+    } catch (error) {
+      lastError = error;
+      console.error(`Profile photo fetch attempt ${attempt} failed:`, error);
+      if (attempt < NETWORK_CONFIG.retryAttempts) {
+        await new Promise(resolve => setTimeout(resolve, NETWORK_CONFIG.retryDelay));
+      }
+    }
+  }
+
+  console.error('All profile photo fetch attempts failed:', lastError);
+  throw lastError;
+};
