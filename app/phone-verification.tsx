@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,14 +9,44 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/contexts/ThemeContext';
 import { verifyPhoneNumber } from '@/services/api';
+import { FCMService } from '@/services/fcm';
 
 export default function PhoneVerificationScreen() {
   const [phoneNumber, setPhoneNumber] = useState('+250 ');
   const [isLoading, setIsLoading] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { setVerified } = useAuth();
   const router = useRouter();
+
+  // Get FCM token when component mounts
+  useEffect(() => {
+    const getFcmToken = async () => {
+      try {
+        const isAvailable = await FCMService.isAvailable();
+        if (!isAvailable) {
+          console.log('FCM not available in current environment (Expo Go). This is normal for development.');
+          setFcmToken(null);
+          return;
+        }
+
+        const token = await FCMService.getFCMToken();
+        setFcmToken(token);
+        if (token) {
+          console.log('FCM token ready for phone verification');
+        } else {
+          console.log('FCM token not available, proceeding without it (phone verification will still work)');
+        }
+      } catch (error) {
+        console.log('Error getting FCM token, proceeding without it:', (error as Error)?.message);
+        // Continue without FCM token if there's an error
+        setFcmToken(null);
+      }
+    };
+
+    getFcmToken();
+  }, []);
 
   const handleSubmit = async () => {
     if (!phoneNumber.trim()) {
@@ -36,8 +66,8 @@ export default function PhoneVerificationScreen() {
     setIsLoading(true);
 
     try {
-      // Call the verification endpoint with clean phone number
-      const data = await verifyPhoneNumber(cleanPhone);
+      // Call the verification endpoint with clean phone number and FCM token
+      const data = await verifyPhoneNumber(cleanPhone, fcmToken || undefined);
 
       if (data.exists) {
         // Phone number exists and is registered

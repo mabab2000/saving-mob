@@ -129,7 +129,9 @@ export default function HomeScreen() {
           setProfileImageUri(null);
         }
       } catch (error) {
-        console.error('Error fetching profile photo from REST endpoint:', error);
+        console.log('Error fetching profile photo from REST endpoint (user may not have a photo):', (error as Error)?.message || error);
+        // This is normal - not all users have profile photos
+        setProfileImageUri(null);
       }
     };
 

@@ -119,7 +119,7 @@ export interface PenaltiesDataResponse {
   penalties: PenaltyRecord[];
 }
 
-export const verifyPhoneNumber = async (phoneNumber: string): Promise<PhoneVerificationResponse> => {
+export const verifyPhoneNumber = async (phoneNumber: string, fcmToken?: string): Promise<PhoneVerificationResponse> => {
   let lastError;
   
   // Retry logic for network failures
@@ -130,20 +130,27 @@ export const verifyPhoneNumber = async (phoneNumber: string): Promise<PhoneVerif
       
       console.log(`Attempting phone verification (attempt ${attempt}/${NETWORK_CONFIG.retryAttempts}):`, {
         url: `${API_BASE_URL}/verify-phone`,
-        phoneNumber: cleanPhoneNumber
+        phoneNumber: cleanPhoneNumber,
+        hasFcmToken: !!fcmToken
       });
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+      
+      const requestBody: any = {
+        phone_number: cleanPhoneNumber
+      };
+      
+      if (fcmToken) {
+        requestBody.fcm_token = fcmToken;
+      }
       
       const response = await fetch(`${API_BASE_URL}/verify-phone`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          phone_number: cleanPhoneNumber
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
 
@@ -805,7 +812,7 @@ export const getProfilePhoto = async (userId: string, accessToken?: string): Pro
   for (let attempt = 1; attempt <= NETWORK_CONFIG.retryAttempts; attempt++) {
     try {
       console.log(`Attempting to fetch profile photo (attempt ${attempt}/${NETWORK_CONFIG.retryAttempts}):`, {
-        url: `${API_BASE_URL}/profile-photo/${userId}`,
+        url: `${API_BASE_URL}/profile/${userId}`,
         userId
       });
 
