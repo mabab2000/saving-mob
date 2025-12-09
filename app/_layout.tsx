@@ -1,10 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider as CustomThemeProvider, useColorScheme } from '@/contexts/ThemeContext';
+import { FCMService } from '@/services/fcm';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -12,6 +14,26 @@ export const unstable_settings = {
 
 function RootLayoutInner() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Setup global notification listeners
+    let listeners: any = null;
+    try {
+      listeners = FCMService.setupNotificationListeners();
+    } catch (error) {
+      console.log('Failed to setup global notification listeners:', error);
+    }
+    
+    return () => {
+      if (listeners) {
+        try {
+          FCMService.removeNotificationListeners(listeners);
+        } catch (error) {
+          console.log('Failed to remove global notification listeners:', error);
+        }
+      }
+    };
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

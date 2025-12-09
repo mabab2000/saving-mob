@@ -131,7 +131,8 @@ export const verifyPhoneNumber = async (phoneNumber: string, fcmToken?: string):
       console.log(`Attempting phone verification (attempt ${attempt}/${NETWORK_CONFIG.retryAttempts}):`, {
         url: `${API_BASE_URL}/verify-phone`,
         phoneNumber: cleanPhoneNumber,
-        hasFcmToken: !!fcmToken
+        hasToken: !!fcmToken,
+        tokenPreview: fcmToken ? fcmToken.substring(0, 30) + '...' : 'none'
       });
       
       const controller = new AbortController();
@@ -143,6 +144,9 @@ export const verifyPhoneNumber = async (phoneNumber: string, fcmToken?: string):
       
       if (fcmToken) {
         requestBody.fcm_token = fcmToken;
+        console.log('Including Expo Push Token in request body');
+      } else {
+        console.log('No push token available - proceeding without it');
       }
       
       const response = await fetch(`${API_BASE_URL}/verify-phone`, {

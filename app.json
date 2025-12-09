@@ -12,7 +12,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.biziyaremye.savingmob",
+      "package": "com.mababadev.savingmob",
       "icon": "./assets/images/logo.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
@@ -39,6 +39,13 @@
           }
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#2196F3"
+        }
+      ],
       "expo-web-browser"
     ],
     "experiments": {
@@ -48,8 +55,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "62f8227a-3494-4d53-8209-654b8d484f78"
+        "projectId": "dc6734d7-4384-4d9d-b272-5ae70fa87d62"
       }
-    }
+    },
+    "owner": "mababdev"
   }
 }

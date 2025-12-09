@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -24,28 +25,57 @@ export default function PhoneVerificationScreen() {
   useEffect(() => {
     const getFcmToken = async () => {
       try {
+        console.log('Initializing push token retrieval...');
         const isAvailable = await FCMService.isAvailable();
         if (!isAvailable) {
-          console.log('FCM not available in current environment (Expo Go). This is normal for development.');
+          console.log('Push notifications not available in current environment. This is normal in Expo Go - will work in production build.');
           setFcmToken(null);
           return;
         }
 
+        console.log('Push notifications available, requesting token...');
         const token = await FCMService.getFCMToken();
-        setFcmToken(token);
+        
         if (token) {
-          console.log('FCM token ready for phone verification');
+          console.log('Expo Push Token obtained successfully:', token);
+          setFcmToken(token);
         } else {
-          console.log('FCM token not available, proceeding without it (phone verification will still work)');
+          // For testing in Expo Go, create a mock token to test API integration
+          if (Constants.appOwnership === 'expo') {
+            const mockToken = 'ExponentPushToken[DEV_TEST_TOKEN_' + Date.now() + ']';
+            console.log('Using mock token for Expo Go testing:', mockToken);
+            setFcmToken(mockToken);
+          } else {
+            console.log('Push token not available, proceeding without it');
+            setFcmToken(null);
+          }
         }
       } catch (error) {
-        console.log('Error getting FCM token, proceeding without it:', (error as Error)?.message);
-        // Continue without FCM token if there's an error
+        console.log('Error getting push token:', (error as Error)?.message);
         setFcmToken(null);
       }
     };
 
+    // Setup notification listeners
+    let listeners: any = null;
+    try {
+      listeners = FCMService.setupNotificationListeners();
+    } catch (error) {
+      console.log('Failed to setup notification listeners:', error);
+    }
+
     getFcmToken();
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      if (listeners) {
+        try {
+          FCMService.removeNotificationListeners(listeners);
+        } catch (error) {
+          console.log('Failed to remove notification listeners:', error);
+        }
+      }
+    };
   }, []);
 
   const handleSubmit = async () => {
@@ -67,10 +97,17 @@ export default function PhoneVerificationScreen() {
 
     try {
       // Call the verification endpoint with clean phone number and FCM token
+      console.log('Submitting phone verification:', {
+        phoneNumber: cleanPhone,
+        hasToken: !!fcmToken,
+        tokenPreview: fcmToken ? fcmToken.substring(0, 30) + '...' : 'none'
+      });
+      
       const data = await verifyPhoneNumber(cleanPhone, fcmToken || undefined);
 
       if (data.exists) {
         // Phone number exists and is registered
+        console.log('Phone verification successful - updating auth context');
         await setVerified(cleanPhone, data.user_id);
         
         Alert.alert(
